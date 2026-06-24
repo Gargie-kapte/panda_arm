@@ -5,6 +5,8 @@
 #include <trajectory_msgs/msg/joint_trajectory_point.hpp>
 #include <vector>
 #include <string>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <chrono>
 
 // ─────────────────────────────────────────────
 // 1. STRUCT DEFINITION — goes at top, after includes, before main()
@@ -100,14 +102,54 @@ int main(int argc, char* argv[])
         rclcpp::sleep_for(std::chrono::seconds(2));
     };
 
-    // ─────────────────────────────────────────
-    // 4. BUILD THE WAYPOINT LIST — your actual values go here
-    // ─────────────────────────────────────────
+    RCLCPP_INFO(logger, "waiting for object pose...");
+
+    geometry_msgs::msg::PoseStamped blue_pose, red_pose;
+    bool recieved_blue = false, recieved_red = false;
+    
+    auto pose_sub_red = node->create_subscription<geometry_msgs::msg::PoseStamped>(
+        "/detected_red_object_pose", 10,
+        [&](const geometry_msgs::msg::PoseStamped::SharedPtr msg){
+            red_pose = *msg;
+            recieved_red = true;
+        }
+    );
+    auto pose_sub_blue = node->create_subscription<geometry_msgs::msg::PoseStamped>(
+        "/detected_blue_object_pose", 10,
+        [&](const geometry_msgs::msg::PoseStamped::SharedPtr msg){
+            blue_pose = *msg;
+            recieved_blue = true;
+        }
+    );
+    rclcpp::Rate rate(10);
+    while(rclcpp::ok() && !(recieved_blue && recieved_red)){
+        rate.sleep();
+    }
+    pose_sub_blue.reset();
+    pose_sub_red.reset();
+    RCLCPP_INFO(logger, "Blue: x=%.3f y=%.3f z=%.3f",
+            blue_pose.pose.position.x, blue_pose.pose.position.y, blue_pose.pose.position.z);
+    RCLCPP_INFO(logger, "Red:  x=%.3f y=%.3f z=%.3f",
+                red_pose.pose.position.x, red_pose.pose.position.y, red_pose.pose.position.z);
+
+
+    double blue_x = blue_pose.pose.position.x;
+    double blue_y = blue_pose.pose.position.y;
+    double blue_z = blue_pose.pose.position.z;
+
+    double red_x = red_pose.pose.position.x;
+    double red_y = red_pose.pose.position.y;
+    double red_z = red_pose.pose.position.z;
+
+    const double box_height = 0.05;  // your box size from SDF
+
     std::vector<Waypoint> waypoints = {
-        {"pre_grasp", make_pose(0.5245, -0.001, 0.025 + 0.15), Waypoint::NONE},
-        {"grasp",     make_pose(0.5245, -0.001, 0.025),        Waypoint::CLOSE_GRIPPER},
-        {"retreat",   make_pose(0.5245, -0.001, 0.025 + 0.20), Waypoint::NONE},
-        {"drop",      make_pose(0.3, 0.4, 0.5),                Waypoint::OPEN_GRIPPER},
+        {"pre_grasp_blue", make_pose(blue_x, blue_y, blue_z + 0.15), Waypoint::NONE},
+        {"grasp_blue",      make_pose(blue_x, blue_y, blue_z),        Waypoint::CLOSE_GRIPPER},
+        {"retreat_blue",    make_pose(blue_x, blue_y, blue_z + 0.20), Waypoint::NONE},
+        {"above_red",       make_pose(red_x, red_y, red_z + 0.15 + box_height), Waypoint::NONE},
+        {"drop_on_red",     make_pose(red_x, red_y, red_z + box_height + 0.005), Waypoint::OPEN_GRIPPER},
+        {"retreat_final",   make_pose(red_x, red_y, red_z + 0.20 + box_height), Waypoint::NONE},
     };
 
     // ─────────────────────────────────────────

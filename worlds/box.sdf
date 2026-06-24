@@ -15,6 +15,10 @@
             name="ignition::gazebo::systems::UserCommands"/>
     <plugin filename="ignition-gazebo-scene-broadcaster-system"
             name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-sensors-system"
+            name="ignition::gazebo::systems::Sensors">
+        <render_engine>ogre2</render_engine>
+    </plugin>
 
     <!-- Light -->
     <light type="directional" name="sun">
@@ -66,7 +70,7 @@
 
     <!-- Red box to pick -->
     <model name="red_box">
-      <pose>0.5 0.0 0.43 0 0 0</pose>
+      <pose>0.3 0.0 0.035 0 0 0</pose>
       <link name="box_link">
         <inertial>
           <mass>0.1</mass>
@@ -84,6 +88,44 @@
             <diffuse>1 0 0 1</diffuse>
           </material>
         </visual>
+      </link>
+    </model>
+    <model name="blue_box">
+      <pose>0.3 0.3 0.035 0 0 0</pose>
+      <link name="box_link">
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size> 0.05 0.05 0.05</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.05 0.05 0.05</size></box></geometry>
+          <material>
+            <ambient>0 0 1 1</ambient>
+            <diffuse>0 0 1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+  
+    <model name='overhead_camera'>
+      <static>true</static>
+      <pose>0.5 0.0 1.0 0 1.5708 0</pose>
+      <link name='camera_link'>
+        <sensor name='rgbd_cam' type='rgbd_camera'>
+          <camera>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image><width>640</width><height>480</height></image>
+            <clip><near>0.1</near><far>10</far></clip>
+          </camera>
+          <always_on>true</always_on>
+          <update_rate>15</update_rate>
+          <topic>camera</topic>
+        </sensor>
       </link>
     </model>
 

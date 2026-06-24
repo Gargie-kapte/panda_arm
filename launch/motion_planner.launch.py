@@ -54,5 +54,6 @@ def generate_launch_description():
                 {"use_sim_time": True},
                 kinematics,
             ],
-        )
+        ),
+
     ])
